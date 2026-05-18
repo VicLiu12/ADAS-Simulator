@@ -4,7 +4,7 @@ import socket
 import json
 
 with np.load('camera_params.npz') as X:
-    mtx, dist = [X[i] for i in ('mtx', 'dist')]
+    mtx, dist = X['mtx'], X['dist']
 
 Marker_Size = 0.05
 
@@ -15,7 +15,7 @@ detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 Mark_3D_Edges = np.array([
     [-Marker_Size / 2, Marker_Size / 2, 0],
     [Marker_Size / 2, Marker_Size / 2, 0],
-    [-Marker_Size / 2, -Marker_Size / 2, 0],
+    [Marker_Size / 2, -Marker_Size / 2, 0],
     [-Marker_Size / 2, -Marker_Size / 2, 0]
 ], dtype=np.float32)
 
