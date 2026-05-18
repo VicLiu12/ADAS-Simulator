@@ -19,7 +19,8 @@ Mark_3D_Edges = np.array([
     [-Marker_Size / 2, -Marker_Size / 2, 0]
 ], dtype=np.float32)
 
-UDP_IP = "127.0.0.1" #之後用到遙控車時要做修改
+# 之後用到遙控車時要做修改
+UDP_IP = "127.0.0.1" 
 UDP_PORT = 5050
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
