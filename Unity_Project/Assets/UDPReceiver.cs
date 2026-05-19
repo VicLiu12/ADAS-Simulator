@@ -24,6 +24,9 @@ public class UDPReceiver : MonoBehaviour
 
     private ArucoData latestData = new ArucoData();
     private bool isDataNew = false;
+    private bool isRunning = true;
+
+    private readonly object dataLock = new object();
 
     void Start()
     {
@@ -35,23 +38,35 @@ public class UDPReceiver : MonoBehaviour
 
     private void ReceiveData()
     {
-        client = new UdpClient(port);
-        while(true)
+        try
         {
-            try
+            client = new UdpClient(port);
+            while (isRunning)
             {
                 IPEndPoint anyIP = new IPEndPoint(IPAddress.Any, 0);
-                byte[] data = client.Receive(ref anyIP);
-                string text = Encoding.UTF8.GetString(data);
 
-                ArucoData parsedData = JsonUtility.FromJson<ArucoData>(text);
-                latestData = parsedData;
-                isDataNew = true;
+                byte[] data = client.Receive(ref anyIP);
+
+                if(data != null && data.Length > 0)
+                {
+                    string text = Encoding.UTF8.GetString(data);
+                    ArucoData parsedData = JsonUtility.FromJson<ArucoData>(text);
+
+                    lock(dataLock)
+                    {
+                        latestData = parsedData;
+                        isDataNew = true;
+                    }
+                }
             }
-            catch (System.Exception e)
-            {
-                Debug.Log(e.ToString());
-            }
+        }
+        catch (SocketException)
+        {
+            Debug.Log("UDP inconneted");
+        }
+        catch (System.Exception e)
+        {
+            Debug.LogWarning("EEROR" + e.ToString());
         }
     }
 
@@ -68,10 +83,21 @@ public class UDPReceiver : MonoBehaviour
         }
     }
 
-    void OnApplicationQiut()
+    void OnDestroy()
     {
-        if (receiveThread != null) receiveThread.Abort();
-        if (client != null) client.Close();
+        isRunning = false;
+
+        if (client != null)
+        {
+            client.Close();
+        }
+
+        if (receiveThread != null && receiveThread.IsAlive)
+        {
+            receiveThread.Abort();
+        }
+
+        Debug.Log("UDP closed");
     }
 
 }
