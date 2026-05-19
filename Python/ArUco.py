@@ -2,16 +2,22 @@ import cv2
 import numpy as np
 import socket
 import json
+import os
 
-with np.load('camera_params.npz') as X:
+current_path = os.path.dirname(__file__)
+file_path = os.path.join(current_path, 'camera_params.npz')
+
+with np.load(file_path) as X:
     mtx, dist = X['mtx'], X['dist']
 
-Marker_Size = 0.05
+Marker_Size = 0.1
 
+#
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
 parameters = cv2.aruco.DetectorParameters()
 detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
+#以標籤中心為基準推算相機距離
 Mark_3D_Edges = np.array([
     [-Marker_Size / 2, Marker_Size / 2, 0],
     [Marker_Size / 2, Marker_Size / 2, 0],
@@ -20,6 +26,7 @@ Mark_3D_Edges = np.array([
 ], dtype=np.float32)
 
 # 之後用到遙控車時要做修改
+# 遙控車Wifi通訊IP位址
 UDP_IP = "127.0.0.1" 
 UDP_PORT = 5050
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
