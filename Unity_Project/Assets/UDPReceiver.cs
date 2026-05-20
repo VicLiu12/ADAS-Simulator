@@ -72,14 +72,26 @@ public class UDPReceiver : MonoBehaviour
 
     void Update()
     {
-        if (isDataNew)
+        ArucoData dataToUse = null;
+        bool hasNewData = false;
+
+        lock (dataLock)
         {
-            float unityX = latestData.tx;
-            float unityY = -latestData.ty;
-            float unityZ = latestData.tz;
+            if(isDataNew)
+            {
+                dataToUse = latestData;
+                isDataNew = false;
+                hasNewData = true;
+            }
+        }
+
+        if(hasNewData && dataToUse != null)
+        {
+            float unityX = dataToUse.tx;
+            float unityY = -dataToUse.ty;
+            float unityZ = dataToUse.tz;
 
             transform.position = new Vector3(unityX, unityY, unityZ);
-            isDataNew = false;
         }
     }
 
@@ -94,7 +106,7 @@ public class UDPReceiver : MonoBehaviour
 
         if (receiveThread != null && receiveThread.IsAlive)
         {
-            receiveThread.Abort();
+            receiveThread.Join(100);
         }
 
         Debug.Log("UDP closed");
