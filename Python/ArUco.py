@@ -28,7 +28,7 @@ Mark_3D_Edges = np.array([
 # 之後用到遙控車時要做修改
 # 遙控車Wifi通訊IP位址
 UDP_IP = "127.0.0.1" 
-UDP_PORT = 5050
+UDP_PORT = 5052
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)

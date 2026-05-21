@@ -20,7 +20,7 @@ public class UDPReceiver : MonoBehaviour
 {
     Thread receiveThread;
     UdpClient client;
-    public int port = 5050;
+    public int port = 5052;
 
     private ArucoData latestData = new ArucoData();
     private bool isDataNew = false;
@@ -60,9 +60,9 @@ public class UDPReceiver : MonoBehaviour
                 }
             }
         }
-        catch (SocketException)
+        catch (SocketException e)
         {
-            Debug.Log("UDP inconneted");
+            Debug.LogWarning("UDP SocketException : " + e.Message);
         }
         catch (System.Exception e)
         {
