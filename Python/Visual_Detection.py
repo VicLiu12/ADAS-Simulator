@@ -15,3 +15,6 @@ Poxel_To_Meter = Marker_Real_Size / Marker_Pixels
 BEV_Width, BEV_Height = 400, 500
 
 
+current_path = os.path.dirname(__file__)
+
+
