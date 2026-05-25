@@ -102,7 +102,11 @@ while True:
             draw_x = int(map_center_x + global_x * 100)
             draw_y = int(map_center_y - global_y * 100)
             cv2.circle(trajectory_map, (draw_x, draw_y), 2, (0, 255, 0), -1)
-            
+
+
+    for i, (new, old) in enumerate(zip(good_new, good_old)):
+        a, b = new.ravel()
+        cv2.circle(frame_undistorted, (int(a), int(b)), 5, (0, 255, 0), -1)        
     
     for i, (new, old) in enumerate(zip(good_new, good_old)):
         a ,b = new.ravel()
@@ -111,8 +115,7 @@ while True:
     old_gray = frame_gray.copy()
     p0 = good_new.reshape(-1, 1, 2)
 
-    cv2.imshow("Original View", frame_undistorted)
-    cv2.imshow("Original View turn Gray", frame_gray)    
+    cv2.imshow("Original View", frame_undistorted)    
     cv2.imshow("Bird Eye View", bev_frame)
     cv2.imshow("Path", trajectory_map)
     
