@@ -12,7 +12,7 @@ with np.load(file_path) as X:
 
 Marker_Size = 0.1
 
-#
+#載入Aruci 4x4字典
 dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
 parameters = cv2.aruco.DetectorParameters()
 detector = cv2.aruco.ArucoDetector(dictionary, parameters)
@@ -36,7 +36,7 @@ print(f"Detect Start, Network Coordinates send to {UDP_IP} : {UDP_PORT}")
 print("Press q quit")
 
 while True:
-    ret, frame = cap.read()
+    ret, frame = cap.read()   #讀取畫面
     if not ret:
         break
 
@@ -45,14 +45,16 @@ while True:
     corners, ids, rejected = detector.detectMarkers(gray)
 
     if ids is not None:
+        #把偵測到的標籤框起來並顯示ID
         cv2.aruco.drawDetectedMarkers(frame, corners, ids)
         
         for i in range(len(ids)):
-            ret, rvec, tvec = cv2.solvePnP(
+            ret, rvec, tvec = cv2.solvePnP(    #計算距離 tvec-->位移向量  rvec-->旋轉向樣
                 Mark_3D_Edges, corners[i][0], mtx, dist, flags = cv2.SOLVEPNP_IPPE_SQUARE
             )
 
             if ret:
+                #劃出三個軸向
                 cv2.drawFrameAxes(frame, mtx, dist, rvec, tvec, Marker_Size)
 
                 data = {

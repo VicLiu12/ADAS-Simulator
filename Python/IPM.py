@@ -16,6 +16,7 @@ dictionary = cv2.aruco.getPredefinedDictionary(cv2.aruco.DICT_4X4_50)
 parameters = cv2.aruco.DetectorParameters()
 detector = cv2.aruco.ArucoDetector(dictionary, parameters)
 
+#輸出大小
 BEV_Width, BEV_Height = 400, 500
 Markers_Pixels = 150
 
@@ -24,6 +25,7 @@ cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 print('s --> save')
 print('q --> quit')
 
+#變換矩陣
 homography_matrix = None
 
 while True:
@@ -41,8 +43,9 @@ while True:
         pts_src = np.array(corners[0][0], dtype="float32")
 
         offset_x = (BEV_Width - Markers_Pixels) // 2
-        offset_y = BEV_Height -Markers_Pixels -50
+        offset_y = BEV_Height -Markers_Pixels -50 #讓標籤靠畫面下方，留50像素空隙
 
+        #拉成正方形
         pts_dst = np.array([
             #左上
             [offset_x, offset_y],
@@ -54,17 +57,19 @@ while True:
             [offset_x, offset_y + Markers_Pixels]
         ], dtype="float32")
 
-
+        #比較拉伸前後，儲存參數
         homography_matrix = cv2.getPerspectiveTransform(pts_src, pts_dst)
     
     cv2.imshow("Front View", frame_undistorted)
 
+    #根據變換矩陣更改原本的畫面
     if homography_matrix is not None:
         bev = cv2.warpPerspective(frame_undistorted, homography_matrix, (BEV_Width, BEV_Height))
         cv2.imshow("Bird EYE", bev)
 
     key = cv2.waitKey(1) & 0xFF
 
+    #將變換矩陣輸出成npz檔
     if key == ord('s') and homography_matrix is not None:
         save_path = os.path.join(current_path, 'ipm.npz')
         np.savez(save_path, M=homography_matrix)

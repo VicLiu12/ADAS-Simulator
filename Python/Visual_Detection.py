@@ -17,15 +17,16 @@ BEV_Width, BEV_Height = 400, 500
 
 #讀取camera_params.npz和ipm.npz
 current_path = os.path.dirname(__file__)
-file_path = os.path.join(current_path, 'camera_params.npz', 'ipm.npz')
+camera_params_path = os.path.join(current_path, 'camera_params.npz')
+ipm_path = os.path.join(current_path, 'IPM.npz')
 
-if not os.path.exists(file_path):
+if not os.path.exists(camera_params_path) or not os.path.exists(ipm_path):
     print('File Load ERROR')
     exit()
 
-with np.load('camera_params.npz') as X:
+with np.load(camera_params_path) as X:
     mtx, dist = X['mtx'], X['dist']
-with np.load('ipm.npz') as X:
+with np.load(ipm_path) as X:
     ipm_matrix = X['M']
 
 #設定網路
@@ -33,8 +34,8 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
 #設定ucas-kanade (lk) 光流法
 lk_params = dict(winSize = (21, 21), maxLevel = 2,
-                 creteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0,01))
-feature_params = dict(maxCorner = 100, qualityLevel = 0.1 , minDistance = 10, blockSize = 7)
+                 criteria = (cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 30, 0.01))
+feature_params = dict(maxCorners = 100, qualityLevel = 0.1 , minDistance = 10, blockSize = 7)
 
 #車子初始位置
 global_x, global_y, global_yaw = 0.0, 0.0, 0.0
@@ -48,16 +49,23 @@ map_center_x, map_center_y = 250, 250
 
 while True:
     ret, frame = cap.read()
-    if not ret : break
+    if not ret:
+        break
     
     frame_undistorted = cv2.undistort(frame, mtx, dist, None, mtx)
     bev_frame = cv2.warpPerspective(frame_undistorted, ipm_matrix, (BEV_Width, BEV_Height))
     frame_gray = cv2.cvtColor(bev_frame, cv2.COLOR_BGR2GRAY)
-    
-    if p0 is None or len(p0) < 15:
+
+    if p0 is None:
         p0 = cv2.goodFeaturesToTrack(frame_gray, mask = None, **feature_params)
         old_gray = frame_gray.copy()
         continue
+    
+    if p0 is None or len(p0) < 15:
+        p0 = cv2.goodFeaturesToTrack(frame_gray, mask = None, **feature_params)
+        if p0 is None:
+            old_gray = frame_gray.copy()
+            continue
     
     p1 ,st, err = cv2.calcOpticalFlowPyrLK(old_gray, frame_gray, p0, None, **lk_params)
     
@@ -73,7 +81,9 @@ while True:
             d_yaw = math.atan2(transform_matrix[1, 0], transform_matrix[0, 0])
             
             dx_meter = dx * Pixel_To_Meter
-            dy_meter = dx * Pixel_To_Meter
+            dy_meter = dy * Pixel_To_Meter
+
+            global_yaw += d_yaw
             
             global_x += (dx_meter * math.cos(global_yaw) - dy_meter * math.sin(global_yaw))
             global_y += (dx_meter * math.sin(global_yaw) + dy_meter * math.cos(global_yaw))
@@ -100,7 +110,9 @@ while True:
         
     old_gray = frame_gray.copy()
     p0 = good_new.reshape(-1, 1, 2)
-    
+
+    cv2.imshow("Original View", frame_undistorted)
+    cv2.imshow("Original View turn Gray", frame_gray)    
     cv2.imshow("Bird Eye View", bev_frame)
     cv2.imshow("Path", trajectory_map)
     
