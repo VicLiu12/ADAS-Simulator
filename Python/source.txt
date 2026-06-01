@@ -2,7 +2,6 @@ while True:
     ret, frame = cap.read()
     if not ret: break
 
-    # 先消除鏡頭的魚眼變形
     frame_undistorted = cv2.undistort(frame, mtx, dist, None, mtx)
 
     # 3. 讓 YOLO26 進行物件偵測

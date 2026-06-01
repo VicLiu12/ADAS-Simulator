@@ -4,13 +4,17 @@ import os
 import math
 from ultralytics import YOLO
 
-if not os.path.exists('camera_params.npz') or not os.path.exists('ipm_matrix.npz'):
-    print('npz load ERROR')
+current_path = os.path.dirname(__file__)
+camera_params_path = os.path.join(current_path, "camera_params.npz")
+ipm_path = os.path.join(current_path, "IPM.npz")
+
+if not os.path.exists(camera_params_path) or not os.path.exists(ipm_path):
+    print("npz file load ERROR")
     exit()
     
-with np.load('camera_params.npz') as X:
+with np.load(camera_params_path) as X:
     mtx, dist = X['mtx'], X['dist']
-with np.load('ipm_matrix.npz') as X:
+with np.load(ipm_path) as X:
     ipm_matrix = X['M']
 
 Marker_Pixels = 150
@@ -26,6 +30,7 @@ cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
 model = YOLO('yolo26n.pt')
 
-
+while True:
+    ret, frame = cap.read()
 
 
