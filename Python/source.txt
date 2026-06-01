@@ -1,0 +1,60 @@
+while True:
+    ret, frame = cap.read()
+    if not ret: break
+
+    # 先消除鏡頭的魚眼變形
+    frame_undistorted = cv2.undistort(frame, mtx, dist, None, mtx)
+
+    # 3. 讓 YOLO26 進行物件偵測
+    # conf=0.5 代表只顯示信心度大於 50% 的物件
+    results = model(frame_undistorted, stream=True, conf=0.5, verbose=False)
+
+    for r in results:
+        boxes = r.boxes
+        for box in boxes:
+            # 取得框框的四個座標 [左上x, 左上y, 右下x, 右下y]
+            x1, y1, x2, y2 = box.xyxy[0].cpu().numpy().astype(int)
+            
+            # 取得物件名稱 (例如 person, cup, cell phone)
+            cls_name = model.names[int(box.cls[0])]
+
+            # 【關鍵】尋找物件接觸地板的點：框框的「底部中心」
+            bottom_center_x = (x1 + x2) / 2
+            bottom_center_y = y2
+
+            # 將這個點包裝成 OpenCV 矩陣格式
+            pt_src = np.array([[[bottom_center_x, bottom_center_y]]], dtype=np.float32)
+
+            # 4. 透過 IPM 矩陣，將畫面像素點轉換為「鳥瞰圖像素點」
+            pt_bev = cv2.perspectiveTransform(pt_src, ipm_matrix)
+            bev_x, bev_y = pt_bev[0][0]
+
+            # 5. 計算真實距離
+            # 計算該點到相機原點的像素距離，並乘上比例尺轉換為「公尺」
+            distance_pixels = math.sqrt((bev_x - CAMERA_BEV_X)**2 + (bev_y - CAMERA_BEV_Y)**2)
+            distance_meters = distance_pixels * PIXEL_TO_METER
+
+            # 如果物件在相機後方或算出來不合理，就跳過
+            if bev_y > CAMERA_BEV_Y: continue
+
+            # --- 畫面繪製 ---
+            # 畫出 YOLO 框框
+            cv2.rectangle(frame_undistorted, (x1, y1), (x2, y2), (0, 255, 255), 2)
+            # 畫出底部接觸點
+            cv2.circle(frame_undistorted, (int(bottom_center_x), int(bottom_center_y)), 5, (0, 0, 255), -1)
+            
+            # 顯示名稱與距離
+            text = f"{cls_name} {distance_meters:.2f}m"
+            cv2.putText(frame_undistorted, text, (x1, y1 - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
+
+            # (選用) 在終端機發出警告
+            if distance_meters < 0.5:
+                print(f"⚠️ 警告！距離 {cls_name} 只剩 {distance_meters:.2f} 公尺，準備煞車！")
+
+    cv2.imshow("AI Obstacle Detection (YOLO26)", frame_undistorted)
+
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
+
+cap.release()
+cv2.destroyAllWindows()
