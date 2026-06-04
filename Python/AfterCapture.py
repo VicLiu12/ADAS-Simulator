@@ -7,7 +7,7 @@ import sys
 CheckBoard = (8, 5)
 SquareSize = 0.03
 
-#計算出亞像素  迭代30次 經度0.001
+#計算出亞像素  迭代30次 精度0.001
 accuracy = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
 
 #建立一個陣列來儲存格角點在真實世界中的3D座標
